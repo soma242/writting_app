@@ -1,0 +1,1 @@
+dialog系はdialogFormにucを引数として渡して扱う
