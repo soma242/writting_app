@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using writting_app.MessageInstance;
+using static System.Net.WebRequestMethods;
 
 namespace writting_app;
 
@@ -20,19 +22,33 @@ public partial class WorkNameSelecter : UserControl
     //Desiner.csのDisposeでDispose
     private IDisposable disposable;
 
+    //listBoxに変更があったか
+    //dragdrop, createButton
+    public bool changed { private set; get; }
+
+    //ucが生き残らないようにindexのみを返して反映後のglobalWorkNamesのリストを参照する。
+    public int returnValue { get { return listBox1.SelectedIndex; } }
+
+    //public string? returnValue;
+
     public WorkNameSelecter()
     {
         InitializeComponent();
+
+        changed = false;
 
         listBox1.MouseDown += ListBox1_MouseDown;
         listBox1.DragOver += ListBox1_DragOver;
         listBox1.DragDrop += ListBox1_DragDrop;
 
+        /*
         var sub = GlobalMessagePipe.GetSubscriber<DisposeWorkNameSelecter>();
         disposable = sub.Subscribe(get =>
         {
-            ReflectListBoxItems();
+            if(changed)
+                ReflectListBoxItems();
         });
+        */
     }
 
     private void WorkNameSelecter_Load(object sender, EventArgs e)
@@ -83,6 +99,8 @@ public partial class WorkNameSelecter : UserControl
             // data は string 型として null ではない状態で使える
             listBox1.Items.Remove(data);
             listBox1.Items.Insert(index, data);
+
+            changed = true;
         }
     }
 
@@ -94,9 +112,15 @@ public partial class WorkNameSelecter : UserControl
             listBox1.Items.Add(workName);
         }
     }
-    private void ReflectListBoxItems()
+
+    //順序をずらさないためにucを読み込んだ側で能動的に実行
+    public void ReflectListBoxItems()
     {
-        GlobalWorkNames.ReflectionList(this.listBox1);
+        if (changed)
+        {
+            GlobalWorkNames.ReflectionList(this.listBox1);
+        }
+
     }
 
 
@@ -107,39 +131,39 @@ public partial class WorkNameSelecter : UserControl
 
     }
 
-    private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
-    {
-
-    }
 
     //
     private void createButton_Click(object sender, EventArgs e)
     {
-        var p = GlobalMessagePipe.GetPublisher<int, int>();
-        p.Publish(0, 0);
+        //var p = GlobalMessagePipe.GetPublisher<int, int>();
+        //p.Publish(0, 0);
         using (var uc = new InputString())
         {
             using (var form = new DialogForm(uc))
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    
+
                     if (!string.IsNullOrWhiteSpace(uc.returnValue))
                     {
                         listBox1.Items.Add(uc.returnValue);
 
 
                         string docPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                        string directoryPath = Path.Combine(docPath, @"writting_app/", uc.returnValue);
+                        string directoryPath = Path.Combine(docPath, uc.returnValue);
 
                         //作品名のDirectoryを作成
                         Directory.CreateDirectory(directoryPath);
 
                         //未完成
                         //作品内のcasheを保存するファイルを作成。
+                       // GlobalFilePath.CreateNodeCache(uc.returnValue);
+
 
                         //初期のディレクトリを作成。
                         //MainText, Character,
+
+                        changed = true;
 
                         /*
                         //これは終了時にglobalWorkNamesから保存
@@ -153,6 +177,45 @@ public partial class WorkNameSelecter : UserControl
 
                 }
             }
+        }
+    }
+
+    private void DeleteButton_Click(Object sender, EventArgs e)
+    {
+        if (listBox1.SelectedIndex == -1)
+        {
+            return;
+        }
+
+        string workName = listBox1.SelectedItem as string;
+
+        if (MessageBox.Show($"{workName}を削除しようとしています。\n本当に削除しますか？",
+                    "確認",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question) == DialogResult.Yes)
+        {
+            var temp = Path.Combine(GlobalFilePath.docPath, workName);
+
+
+            listBox1.Items.Remove(listBox1.SelectedItem);
+            changed = true;
+            if (Directory.Exists(temp))
+            {
+                try
+                {
+                    Directory.Delete(temp, recursive: true);
+                    
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"ファイルの削除に失敗しました: {ex.Message}");
+                }
+
+                var pub = GlobalMessagePipe.GetPublisher<string>();
+                pub.Publish(temp);
+            }
+            
+            
         }
     }
 }

@@ -13,6 +13,9 @@ namespace writting_app
 
     public partial class SelectPanel : UserControl
     {
+        private RootNode mainTextRoot;
+        private RootNode characterRoot;
+
         public SelectPanel()
         {
             InitializeComponent();

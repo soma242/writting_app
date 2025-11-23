@@ -18,9 +18,14 @@ namespace writting_app;
 
 public partial class Form1 : Form
 {
+    private readonly int expandWidth = 200;
+    private readonly int mainMenuSplit = 36;
 
-    int leftMenuWidth = 200;
+
+    int leftMenuWidth;
     int splitPanelHeight = 20;
+
+    private bool expandMenu = true;
 
 
     IDisposable disposable;
@@ -31,10 +36,12 @@ public partial class Form1 : Form
 
         SetMessageContainer();
 
-        disposable = GlobalMessagePipe.GetSubscriber<int, int>().Subscribe(0, get =>
+        leftMenuWidth = expandWidth;
+
+        disposable = GlobalMessagePipe.GetSubscriber<string>().Subscribe(get =>
         {
 
-            LogChecker.WriteLog("Key Message Sub");
+            LogChecker.WriteLog(get);
         });
 
 
@@ -42,6 +49,11 @@ public partial class Form1 : Form
 
         LogChecker.Init(this.textBox1);
 
+        //test
+        /*
+        var pub = GlobalMessagePipe.GetPublisher<string>();
+        pub.Publish(Path.Combine(GlobalFilePath.docPath, "aaaa"));
+        */
 
         //mev.Test();
 
@@ -64,9 +76,13 @@ public partial class Form1 : Form
 
     private void Form1_Resize(object? sender, EventArgs e)
     {
+
+
         splitContainer1.SplitterDistance = leftMenuWidth;
         splitContainer3.SplitterDistance = splitPanelHeight;
         splitContainer4.SplitterDistance = splitPanelHeight;
+        splitContainer_mainMenu.SplitterDistance = mainMenuSplit;
+
 
     }
 
@@ -92,25 +108,6 @@ public partial class Form1 : Form
 
     }
 
-    private void splitContainer1_Panel1_Paint(object sender, PaintEventArgs e)
-    {
-
-    }
-
-    private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
-    {
-
-    }
-
-    private void toolStripContainer1_ContentPanel_Load(object sender, EventArgs e)
-    {
-
-    }
-
-    private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e)
-    {
-
-    }
 
 
 
@@ -123,36 +120,37 @@ public partial class Form1 : Form
         splitContainer1.SplitterDistance = leftMenuWidth;
     }
 
-    private void splitContainer2_Panel1_Paint(object sender, PaintEventArgs e)
-    {
 
-    }
 
     private void button1_Click(object sender, EventArgs e)
     {
 
-        using(var uc = new WorkNameSelecter())
-        {
-            using (var form = new DialogForm(uc))
-            {
-                if (form.ShowDialog() == DialogResult.OK)
-                {
+        SetWorkName();
 
-                    /*
-                    if (!string.IsNullOrWhiteSpace(form.InputText))
-                    {
-                        //listBox1.Items.Add(form.InputText);
-                    }
-                    */
-                }
-            }
+    }
+
+    private void expand_button_Click_1(object sender, EventArgs e)
+    {
+        if (expandMenu)
+        {
+            expandMenu = false;
+            leftMenuWidth = 36;
+            splitContainer1.SplitterDistance = leftMenuWidth;
+            flowLayoutPanel1.Visible = false;
+
         }
-        
+        else
+        {
+            expandMenu = true;
+            leftMenuWidth = expandWidth;
+            splitContainer1.SplitterDistance = leftMenuWidth;
+            flowLayoutPanel1.Visible = true;
+        }
     }
 
     private void Form1_Load(object sender, EventArgs e)
     {
-
+        //
     }
 
 
@@ -163,11 +161,43 @@ public partial class Form1 : Form
         builder.AddMessagePipe(/* configure option */);
 
         // AddMessageBroker: Register for IPublisher<T>/ISubscriber<T>, includes async and buffered.
-        builder.AddMessageBroker<int, int>(); 
-        builder.AddMessageBroker<DisposeWorkNameSelecter>(); 
+        builder.AddMessageBroker<int, int>();
+        //builder.AddMessageBroker<DisposeWorkNameSelecter>(); 
+        builder.AddMessageBroker<string>();
 
         var provider = builder.BuildServiceProvider();
         GlobalMessagePipe.SetProvider(provider);
 
     }
+
+    private void SetWorkName()
+    {
+        using (var uc = new WorkNameSelecter())
+        {
+            using (var form = new DialogForm(uc))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    uc.ReflectListBoxItems();
+                    int index = uc.returnValue;
+                    if (index == -1)
+                        return;
+
+                    string value = GlobalWorkNames.ReturnValue(index);
+
+
+                    //list内のデータを読み込む前にデータの反映が保証されている必要がある。
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        GlobalFilePath.SetWorkName(value);
+                    }
+
+
+                }
+            }
+        }
+    }
+
+
 }

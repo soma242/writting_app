@@ -35,6 +35,7 @@
             splitContainer1 = new SplitContainer();
             flowLayoutPanel1 = new FlowLayoutPanel();
             createButton = new Button();
+            deleteButton = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -76,12 +77,12 @@
             // flowLayoutPanel1
             // 
             flowLayoutPanel1.Controls.Add(createButton);
+            flowLayoutPanel1.Controls.Add(deleteButton);
             flowLayoutPanel1.Dock = DockStyle.Fill;
             flowLayoutPanel1.Location = new Point(0, 0);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
             flowLayoutPanel1.Size = new Size(989, 44);
             flowLayoutPanel1.TabIndex = 0;
-            flowLayoutPanel1.Paint += flowLayoutPanel1_Paint;
             // 
             // createButton
             // 
@@ -91,9 +92,23 @@
             createButton.Name = "createButton";
             createButton.Size = new Size(93, 38);
             createButton.TabIndex = 0;
+            createButton.TabStop = false;
             createButton.Text = "new";
             createButton.UseVisualStyleBackColor = true;
             createButton.Click += createButton_Click;
+            // 
+            // deleteButton
+            // 
+            deleteButton.AutoSize = true;
+            deleteButton.Font = new Font("Yu Gothic UI", 15F);
+            deleteButton.Location = new Point(102, 3);
+            deleteButton.Name = "deleteButton";
+            deleteButton.Size = new Size(93, 38);
+            deleteButton.TabIndex = 1;
+            deleteButton.TabStop = false;
+            deleteButton.Text = "Delete";
+            deleteButton.UseVisualStyleBackColor = true;
+            deleteButton.Click += DeleteButton_Click;
             // 
             // WorkNameSelecter
             // 
@@ -121,5 +136,6 @@
         private SplitContainer splitContainer1;
         private FlowLayoutPanel flowLayoutPanel1;
         private Button createButton;
+        private Button deleteButton;
     }
 }

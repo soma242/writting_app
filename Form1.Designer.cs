@@ -28,7 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             splitContainer1 = new SplitContainer();
+            splitContainer_mainMenu = new SplitContainer();
+            expand_button = new Button();
             flowLayoutPanel1 = new FlowLayoutPanel();
             button1 = new Button();
             textBox1 = new TextBox();
@@ -38,12 +41,16 @@
             button2 = new Button();
             splitContainer4 = new SplitContainer();
             button3 = new Button();
-            toolStripMenuItem1 = new ToolStripMenuItem();
             menuStrip1 = new MenuStrip();
+            toolStripMenuItem1 = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer_mainMenu).BeginInit();
+            splitContainer_mainMenu.Panel1.SuspendLayout();
+            splitContainer_mainMenu.Panel2.SuspendLayout();
+            splitContainer_mainMenu.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer2).BeginInit();
@@ -69,7 +76,7 @@
             // 
             // splitContainer1.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(flowLayoutPanel1);
+            splitContainer1.Panel1.Controls.Add(splitContainer_mainMenu);
             // 
             // splitContainer1.Panel2
             // 
@@ -78,7 +85,34 @@
             splitContainer1.SplitterDistance = 199;
             splitContainer1.SplitterWidth = 5;
             splitContainer1.TabIndex = 2;
-            splitContainer1.SplitterMoved += splitContainer1_SplitterMoved;
+            // 
+            // splitContainer_mainMenu
+            // 
+            splitContainer_mainMenu.Dock = DockStyle.Fill;
+            splitContainer_mainMenu.Location = new Point(0, 0);
+            splitContainer_mainMenu.Name = "splitContainer_mainMenu";
+            splitContainer_mainMenu.Orientation = Orientation.Horizontal;
+            // 
+            // splitContainer_mainMenu.Panel1
+            // 
+            splitContainer_mainMenu.Panel1.Controls.Add(expand_button);
+            // 
+            // splitContainer_mainMenu.Panel2
+            // 
+            splitContainer_mainMenu.Panel2.Controls.Add(flowLayoutPanel1);
+            splitContainer_mainMenu.Size = new Size(199, 672);
+            splitContainer_mainMenu.SplitterDistance = 36;
+            splitContainer_mainMenu.TabIndex = 3;
+            // 
+            // expand_button
+            // 
+            expand_button.Image = (Image)resources.GetObject("expand_button.Image");
+            expand_button.Location = new Point(3, 3);
+            expand_button.Name = "expand_button";
+            expand_button.Size = new Size(32, 32);
+            expand_button.TabIndex = 2;
+            expand_button.UseVisualStyleBackColor = true;
+            expand_button.Click += expand_button_Click_1;
             // 
             // flowLayoutPanel1
             // 
@@ -90,9 +124,8 @@
             flowLayoutPanel1.Margin = new Padding(4);
             flowLayoutPanel1.MinimumSize = new Size(23, 0);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(199, 672);
+            flowLayoutPanel1.Size = new Size(199, 632);
             flowLayoutPanel1.TabIndex = 0;
-            flowLayoutPanel1.Paint += flowLayoutPanel1_Paint;
             // 
             // button1
             // 
@@ -136,7 +169,6 @@
             // splitContainer2.Panel1
             // 
             splitContainer2.Panel1.Controls.Add(splitContainer3);
-            splitContainer2.Panel1.Paint += splitContainer2_Panel1_Paint;
             // 
             // splitContainer2.Panel2
             // 
@@ -201,13 +233,6 @@
             button3.Text = "button3";
             button3.UseVisualStyleBackColor = true;
             // 
-            // toolStripMenuItem1
-            // 
-            toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(124, 20);
-            toolStripMenuItem1.Text = "toolStripMenuItem1";
-            toolStripMenuItem1.Click += toolStripMenuItem1_Click;
-            // 
             // menuStrip1
             // 
             menuStrip1.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1 });
@@ -219,6 +244,13 @@
             menuStrip1.Text = "menuStrip1";
             menuStrip1.ItemClicked += menuStrip1_ItemClicked;
             // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(124, 20);
+            toolStripMenuItem1.Text = "toolStripMenuItem1";
+            toolStripMenuItem1.Click += toolStripMenuItem1_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -228,6 +260,7 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Margin = new Padding(4);
+            MinimumSize = new Size(400, 300);
             Name = "Form1";
             Padding = new Padding(12);
             Text = "Form1";
@@ -236,6 +269,10 @@
             splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
+            splitContainer_mainMenu.Panel1.ResumeLayout(false);
+            splitContainer_mainMenu.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer_mainMenu).EndInit();
+            splitContainer_mainMenu.ResumeLayout(false);
             flowLayoutPanel1.ResumeLayout(false);
             flowLayoutPanel1.PerformLayout();
             panel1.ResumeLayout(false);
@@ -259,7 +296,6 @@
         #endregion
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.SplitContainer splitContainer2;
-        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.Button button1;
@@ -269,6 +305,9 @@
         private System.Windows.Forms.SplitContainer splitContainer4;
         private System.Windows.Forms.Panel panel1;
         private TextBox textBox1;
+        private Button expand_button;
+        private ToolStripMenuItem toolStripMenuItem1;
+        private SplitContainer splitContainer_mainMenu;
     }
 }
 

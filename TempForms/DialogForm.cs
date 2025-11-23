@@ -12,10 +12,12 @@ using writting_app.MessageInstance;
 
 namespace writting_app;
 
+//実際の動作は渡されるucに任せてok,cancelを返す
+
 public partial class DialogForm : Form
 {
     public int buttonHeight = 40;
-    public string returnValue = "";
+   // public string returnValue = "";
 
     
 
@@ -25,8 +27,9 @@ public partial class DialogForm : Form
         CommonInit(uc as UserControl);
 
         this.Text = "作品名";
+        this.AcceptButton = this.okButton;
 
-        FormClosing += WorkMessageClosing;
+        //FormClosing += WorkMessageClosing;
     }
 
     public DialogForm(InputString uc)
@@ -39,11 +42,14 @@ public partial class DialogForm : Form
 
     }
 
+    /*
     public void WorkMessageClosing(object sender, EventArgs e)
     {
+        //ucに終了を通知
         var pub = GlobalMessagePipe.GetPublisher<DisposeWorkNameSelecter>();
         pub.Publish(new DisposeWorkNameSelecter());
     }
+    */
 
 
 
@@ -57,6 +63,7 @@ public partial class DialogForm : Form
 
     public void okButton_Click(object sender, EventArgs e)
     {
+        //returnValue = 
         this.DialogResult = DialogResult.OK;
         this.Close();
     }

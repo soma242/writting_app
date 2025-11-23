@@ -2,4 +2,4 @@
 
 namespace writting_app.MessageInstance;
 
-public struct DisposeWorkNameSelecter { }
+//public struct DisposeWorkNameSelecter { }
