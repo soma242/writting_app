@@ -33,7 +33,7 @@ public static class GlobalWorkNames
     {
         lock (gate)
         {
-            instance.RelflectionList(listBox);
+            instance.ReflectionList(listBox);
         }
     }
 
@@ -133,7 +133,7 @@ public class WorkNameList
 
     //ListBoxの内容を反映させる。
     //workNameSelecterが閉じられるときに呼ばれる。
-    public void RelflectionList(ListBox listBox)
+    public void ReflectionList(ListBox listBox)
     {
         workNames.Clear();
         foreach (var obj in listBox.Items)
@@ -142,6 +142,9 @@ public class WorkNameList
                 workNames.Add(item);
         }
         changed = true;
+
+        //var pub = GlobalMessagePipe.GetPublisher<string>();
+        //pub.Publish("reflect");
     }
 
 }

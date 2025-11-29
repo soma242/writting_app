@@ -25,6 +25,11 @@ public static class LogChecker
 
     public static void WriteLog(string message)
     {
+        textBox.Text += $"Log: {message}\n";
+    }
+
+    public static void WriteLog(int message) 
+    {
         textBox.Text = $"Log: {message}";
     }
 

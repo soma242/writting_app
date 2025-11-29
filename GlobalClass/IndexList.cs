@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace PublishStructure.Internal;
+using PublishStructure.Internal;
+
+namespace writting_app;
 
 #nullable enable
 #pragma warning disable CS8618
@@ -10,15 +12,18 @@ namespace PublishStructure.Internal;
 //Subscribeの内部
 
 //空いたインデックスをQueueに入れてFIFOで空いているインデックスを受け取っている。
-//Quereには空いたインデックス(int)が入っている。インデックスが空いたらQuereにそのインデックスを挿入。<=これがインデックスを割り当てられたオブジェクトを解放した時に生じる
-//Addで取り出し、Removeで数値を入れる
+//FreeListをいじったもの。FastQueueに依存している。
 
-internal sealed class  FreeList<T> : IDisposable where T : class
+//必要なのはindex(MessagePipeのKey)の管理だけなので内部にValueを持つ必要はない。
+
+internal sealed class IndexList
+    //<T> : IDisposable where T : class
 {
     const int InitialCapacity = 4;
     const int MinShrinkStart = 8;
 
-    T?[] values;
+    int capacity;
+
     int count;
     // 空いているインデックスのキュー
     //使われていないインデックスの記録
@@ -27,13 +32,12 @@ internal sealed class  FreeList<T> : IDisposable where T : class
     bool isDisposed;
     readonly object gate = new object();
 
-    public FreeList()
+    public IndexList()
     {
         Initialize();
     }
 
     //呼び出しに対してvaluesを返している。
-    public T?[] GetValues() => values;
 
     public int GetCount()
     {
@@ -43,12 +47,12 @@ internal sealed class  FreeList<T> : IDisposable where T : class
         }
     }
 
-    public int Add(T value)
+    public int Add()
     {
         lock (gate)
         {
-            if(isDisposed)
-                throw new ObjectDisposedException(nameof(FreeList<T>));
+            if (isDisposed)
+                throw new ObjectDisposedException("既にDisposeされています");
 
             //freeIndex.CountはFastQueueのsizeを返す。
             //sizeは初期化で0に設定され、Enqueueで+1(Initで最大値)、Dequeueで-1(Addするごとに減る)される。
@@ -56,50 +60,40 @@ internal sealed class  FreeList<T> : IDisposable where T : class
             //このifがtrueならば、使われていないインデックスが存在するということ。
             if (freeIndex.Count != 0)
             {
-                var index = freeIndex.Dequeue();
-                values[index] = value;
+                int index = freeIndex.Dequeue();
                 count++;
                 return index;
             }
             else
             {
                 //新しいTの配列（元の二倍の大きさ）
-                var newValues = new T[values.Length * 2];
-                Array.Copy(values, 0, newValues, 0, values.Length);
-                freeIndex.EnsureNewCapacity(newValues.Length);
-                for (int i = values.Length; i < newValues.Length; i++)
+                int newCapacity = capacity * 2;
+                freeIndex.EnsureNewCapacity(newCapacity);
+                for (int i = capacity; i < newCapacity; i++)
                 {
                     freeIndex.Enqueue(i);
                 }
 
-                var index = freeIndex.Dequeue();
-                newValues[values.Length] = value;
+                int index = freeIndex.Dequeue();
                 count++;
-                //多スレッド環境で安全に参照を書き換えるためのメモリバリア付き代入。
-                Volatile.Write(ref values, newValues);
                 return index;
             }
         }
     }
 
-    //shrinkWhenEmptyは外部から縮小をコントロールするためのパラメータとして使われているので恐らくパフォーマンス最適化のため
-    public void Remove(int index, bool shrinkWhenEmpty)
+    //Alignmentを増やすことは多くないのでshrinkWhenEmptyをオミット
+    public void Remove(int index)
     {
         lock (gate)
         {
             if (isDisposed) return; // do nothing
 
-            //Tの配列
-            ref var v = ref values[index];
-            if (v == null) throw new KeyNotFoundException($"key index {index} is not found.");
-
-            v = null;
             //Queueに最後に入れられた次の場所に新しく空いたインデックスの番号をintで渡している。
             freeIndex.Enqueue(index);
             count--;
 
             // 空になったら縮小する
-            if (shrinkWhenEmpty && count == 0 && values.Length > MinShrinkStart)
+            if (count == 0 && capacity > MinShrinkStart)
             {
                 Initialize(); // re-init.
             }
@@ -133,13 +127,13 @@ internal sealed class  FreeList<T> : IDisposable where T : class
             isDisposed = true;
 
             freeIndex = null!;
-            values = Array.Empty<T?>();
             count = 0;
         }
     }
 
     void Initialize()
     {
+        isDisposed = false;
         //初期状態では全てのインデックスが使われていない状態なので、0からInitialCapacity-1までをEnqueueしている。
         freeIndex = new FastQueue<int>(InitialCapacity);
         for (int i = 0; i < InitialCapacity; i++)
@@ -147,8 +141,6 @@ internal sealed class  FreeList<T> : IDisposable where T : class
             freeIndex.Enqueue(i);
         }
         count = 0;
-
-        var v = new T?[InitialCapacity];
-        Volatile.Write(ref values, v);
+        capacity = InitialCapacity;
     }
 }

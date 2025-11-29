@@ -4,6 +4,7 @@ using System.Text;
 
 using MessagePack;
 using PublishStructure;
+using PublishStructure.Internal;
 
 namespace writting_app;
 
@@ -13,6 +14,8 @@ public static class GlobalFilePath
     public static GlobalFilePathInstance instance { get; private set; } = new GlobalFilePathInstance();
 
     public static string docPath { get { return instance.docPath; } }
+
+    public static int alignmentIndex {  get { return instance.alignmentIndex; } }
 
     public static void CreateNodeCache(string tempName)
     {
@@ -29,25 +32,42 @@ public static class GlobalFilePath
         }
     }
 
+    public static void RemoveAlignment(int index)
+    {
+        lock (gate)
+        {
+            instance.RemoveAlignment(index);
+        }
+    }
 
 }
 
-
+/// <summary>
+/// ///////////////////////////////////
+/// </summary>
 public class GlobalFilePathInstance
     {
     public string docPath;
     public string workName;
 
 
+    public int alignmentIndex { get => indexList.Add(); }
+
+    //alignmentPanelに対して空いているインデックスを割り当て、その値をkeyにして子Controlに対して操作を行う。
+    internal IndexList indexList;
+
     public string mainTextCashePath;
     public Lazy<List<NodeData>> mainTextPathCashe;
     //インライン化されるはず(ラップ)
     public List<NodeData> mainTexts => mainTextPathCashe.Value;
 
-    
+    public void RemoveAlignment(int index) {
+        indexList.Remove(index);
+    }
 
     public GlobalFilePathInstance()
     {
+        indexList = new IndexList();
 
         string temp = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         //Path.Combineは結合する文字列の間に自動で/を挿入する
@@ -55,6 +75,9 @@ public class GlobalFilePathInstance
         workName = "";
         mainTextCashePath = "/mainTextNode.bin";
         mainTextPathCashe = new Lazy<List<NodeData>>();
+
+        //
+        //alignmentPanelQueue.
 
     }
 

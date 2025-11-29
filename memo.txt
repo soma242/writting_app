@@ -1,1 +1,67 @@
 dialog系はdialogFormにucを引数として渡して扱う
+
+
+
+
+
+////AlignmentPanel
+/*
+ font =>class　参照だけ渡せばいい。必要情報をラップしたクラスで渡したほうがいいかも
+
+ point => すべてのtreePaintPanelと、UserPaintButtonから　Heightを都度獲得、それぞれのPointを調整
+    自分の番号を渡してそれ以下だけ再描写でいいかも
+ Width => ResizeからのPubを受け取ればいい
+ height => 一つ当たりのサイズ*list.Countでいい。タイミングはlistへの追加メソッドに追加してPubすればいい（alignmentでの仕訳はいらない）
+
+ IndexList内に必要データを纏めたクラスの配列を作成してインデックスから直接アクセスする方式も考えたが、
+ それぞれのheightを受け取って次の要素の位置を決める処理において結局AlignmentPanel内にinterface配列として保持してforeachするのが順序安定しそうなので、interfaceのプロパティ増やしてこっちで管理する。
+　ファイル保存しないデータなので種類が増えた場合も安定なはず
+
+ 参照リストに変更が入った場合もspanに切り出して以降の要素のみ処理
+
+ */
+
+
+
+ ////TreePaintPanel
+ /*
+  内部のボタン位置の計算で割合計算をする場合にfloatを使うとキャストが起きるはずなのでintのみで計算
+  Width変更時に一回計算したのを保持して使いまわす
+  fontの変更では縦の大きさを再計算して保持
+  font.Heightの内部処理を公式ソースコード確認したところ、都度floatをintにキャストしているので、値をalignmentPanelでキャッシュしてinterface越しに反映する
+ 
+ */
+
+
+
+//// IAlignable 
+/*
+ arrayに入れてforeach
+
+ 全コントロール生成後に位置決定
+ 
+ 一度も拡大されていないTreePaintPanelが参照するlistはLazy。データの大部分はここ
+
+ LazyでControlを制御するのではなく、単なるboolでOnPaintなどの制御を行わないようにする。
+ 一度開いたならwork自体を変更するまでlistはメモリ上にキャッシュする。
+    =>Lazyで処理することにあまり意味はなさそう。
+
+ boolの切り替えは初期化の段階でTreePaintPanelでIndexKeyをキーにして空のstructをメッセージにSubscribe。UserPaintButtonでPublish
+
+*/
+
+
+////メイン画面サブ画面について
+/*
+　UserControlで上固定のSplitContainerを用意
+　ボタンから一画面と二画面の切り替え(Form1のSplitContainerにサブ画面を入れたままキャッシュしてメイン画面だけをSplitContainerの位置に移行)
+　さらに追加Formとして最前面表示のFormに追加画面として同じUserControlを呼び出せるように。これは閉じたときにDispose
+　
+
+*/
+
+
+////SelectPanel
+/*
+ treeをPanelに変更。
+*/

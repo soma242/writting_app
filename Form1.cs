@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using writting_app.MessageInstance;
-
+using writting_app.CustomUI;
 
 
 namespace writting_app;
@@ -63,9 +63,21 @@ public partial class Form1 : Form
         splitContainer3.Panel2.Controls.Add(uc);
 
 
-        this.Resize += new System.EventHandler(this.Form1_Resize);
+        //this.Resize += new System.EventHandler(this.Form1_Resize);
 
         CompSizeIni();
+
+        var ts = new TextScreen();
+        ts.Dock = DockStyle.Fill;
+        splitContainer2.Panel2.Controls.Add(ts);
+
+        var flow = new AlignmentPanel(GlobalFilePath.alignmentIndex, ts.screenIndex, DrawKind.all);
+        flow.Dock = DockStyle.Fill;
+        flow.AutoScroll = true;
+        //flow.
+        ts.Panel2.Controls.Add(flow);
+
+        //flow.Dispose();
 
     }
 
@@ -74,6 +86,31 @@ public partial class Form1 : Form
         disposable?.Dispose();
     }
 
+    private void SetMessageContainer()
+    {
+        var builder = new BuiltinContainerBuilder();
+
+        builder.AddMessagePipe(/* configure option */);
+
+        // AddMessageBroker: Register for IPublisher<T>/ISubscriber<T>, includes async and buffered.
+        builder.AddMessageBroker<int, int>();
+        //builder.AddMessageBroker<DisposeWorkNameSelecter>(); 
+        builder.AddMessageBroker<string>();
+
+        builder.AddMessageBroker<int, string>();
+
+        builder.AddMessageBroker<int, ChangeScreenFont>();
+
+        builder.AddMessageBroker<int, AlignmentWidth>();
+        builder.AddMessageBroker<int, ExpandMainTexts>();
+        builder.AddMessageBroker<int, AlignCall>();
+
+        var provider = builder.BuildServiceProvider();
+        GlobalMessagePipe.SetProvider(provider);
+
+    }
+
+    /*
     private void Form1_Resize(object? sender, EventArgs e)
     {
 
@@ -85,6 +122,7 @@ public partial class Form1 : Form
 
 
     }
+    */
 
     private void OnAppExit(object? sender, EventArgs e)
     {
@@ -118,6 +156,11 @@ public partial class Form1 : Form
     {
 
         splitContainer1.SplitterDistance = leftMenuWidth;
+
+        splitContainer1.Panel1MinSize = leftMenuWidth;
+        splitContainer3.Panel1MinSize = splitPanelHeight;
+        //splitContainer4.Panel1MinSize = splitPanelHeight;
+        splitContainer_mainMenu.Panel1MinSize = mainMenuSplit;
     }
 
 
@@ -135,6 +178,7 @@ public partial class Form1 : Form
         {
             expandMenu = false;
             leftMenuWidth = 36;
+            splitContainer1.Panel1MinSize = leftMenuWidth;
             splitContainer1.SplitterDistance = leftMenuWidth;
             flowLayoutPanel1.Visible = false;
 
@@ -143,6 +187,7 @@ public partial class Form1 : Form
         {
             expandMenu = true;
             leftMenuWidth = expandWidth;
+            splitContainer1.Panel1MinSize = leftMenuWidth;
             splitContainer1.SplitterDistance = leftMenuWidth;
             flowLayoutPanel1.Visible = true;
         }
@@ -154,21 +199,7 @@ public partial class Form1 : Form
     }
 
 
-    private void SetMessageContainer()
-    {
-        var builder = new BuiltinContainerBuilder();
 
-        builder.AddMessagePipe(/* configure option */);
-
-        // AddMessageBroker: Register for IPublisher<T>/ISubscriber<T>, includes async and buffered.
-        builder.AddMessageBroker<int, int>();
-        //builder.AddMessageBroker<DisposeWorkNameSelecter>(); 
-        builder.AddMessageBroker<string>();
-
-        var provider = builder.BuildServiceProvider();
-        GlobalMessagePipe.SetProvider(provider);
-
-    }
 
     private void SetWorkName()
     {
@@ -176,9 +207,14 @@ public partial class Form1 : Form
         {
             using (var form = new DialogForm(uc))
             {
-                if (form.ShowDialog() == DialogResult.OK)
+                //ShowDialogを待ってからreflectionしないといけない
+                //Dialogの結果にかかわらずreflectionする
+                var result = form.ShowDialog();
+                uc.ReflectListBoxItems();
+
+
+                if (result == DialogResult.OK)
                 {
-                    uc.ReflectListBoxItems();
                     int index = uc.returnValue;
                     if (index == -1)
                         return;

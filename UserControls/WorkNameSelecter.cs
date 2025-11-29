@@ -31,15 +31,24 @@ public partial class WorkNameSelecter : UserControl
 
     //public string? returnValue;
 
+    private int dragIndex = -1;      // ドラッグ開始位置
+    private int hoverIndex = -1;     // 現在のプレビュー位置
+
+
     public WorkNameSelecter()
     {
         InitializeComponent();
 
         changed = false;
 
+
+
         listBox1.MouseDown += ListBox1_MouseDown;
+        listBox1.MouseMove += ListBox1_MouseMove;
         listBox1.DragOver += ListBox1_DragOver;
         listBox1.DragDrop += ListBox1_DragDrop;
+
+
 
         /*
         var sub = GlobalMessagePipe.GetSubscriber<DisposeWorkNameSelecter>();
@@ -73,36 +82,64 @@ public partial class WorkNameSelecter : UserControl
 
 
 
-
-    private void ListBox1_MouseDown(object? sender, MouseEventArgs e)
+    private void ListBox1_MouseDown(object sender, MouseEventArgs e)
     {
-        if (listBox1.SelectedItem != null)
+        dragIndex = listBox1.IndexFromPoint(e.Location);
+    }
+
+    private void ListBox1_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left && dragIndex >= 0)
         {
-            listBox1.DoDragDrop(listBox1.SelectedItem, DragDropEffects.Move);
+            listBox1.DoDragDrop(listBox1.Items[dragIndex], DragDropEffects.Move);
         }
     }
 
-    private void ListBox1_DragOver(object? sender, DragEventArgs e)
+    private void ListBox1_DragOver(object sender, DragEventArgs e)
     {
         e.Effect = DragDropEffects.Move;
+
+        Point p = listBox1.PointToClient(new Point(e.X, e.Y));
+
+        int temp = listBox1.IndexFromPoint(p);
+        if (hoverIndex != temp) {
+            hoverIndex = temp;
+            DrawPreviewLine();
+        }
+
     }
 
-    private void ListBox1_DragDrop(object? sender, DragEventArgs e)
+    private void ListBox1_DragDrop(object sender, DragEventArgs e)
     {
-        Point point = listBox1.PointToClient(new Point(e.X, e.Y));
-        int index = listBox1.IndexFromPoint(point);
+        if (dragIndex < 0 || hoverIndex < 0 || dragIndex == hoverIndex) return;
 
-        if (index < 0) index = listBox1.Items.Count - 1;
+        object item = listBox1.Items[dragIndex];
+        listBox1.Items.RemoveAt(dragIndex);
+        listBox1.Items.Insert(hoverIndex, item);
 
-        if (e.Data.GetData(typeof(string)) is string data)
+        changed = true;
+
+        dragIndex = -1;
+        hoverIndex = -1;
+    }
+
+    //MouseOverしている位置のindexが変わるたびに呼ばれて、プレビューラインを乗せる
+    private void DrawPreviewLine()
+    {
+        listBox1.Refresh(); 
+        if (hoverIndex < 0) return;
+
+        Rectangle rect = listBox1.GetItemRectangle(hoverIndex);
+
+        using (Graphics g = listBox1.CreateGraphics())
         {
-            // data は string 型として null ではない状態で使える
-            listBox1.Items.Remove(data);
-            listBox1.Items.Insert(index, data);
-
-            changed = true;
+            g.FillRectangle(Brushes.Red, 0, rect.Top - 1, listBox1.Width, 2); // 上側に線
         }
     }
+
+
+
+
 
 
     private void SetListBoxItems()
@@ -112,6 +149,9 @@ public partial class WorkNameSelecter : UserControl
             listBox1.Items.Add(workName);
         }
     }
+
+
+
 
     //順序をずらさないためにucを読み込んだ側で能動的に実行
     public void ReflectListBoxItems()
@@ -146,11 +186,21 @@ public partial class WorkNameSelecter : UserControl
 
                     if (!string.IsNullOrWhiteSpace(uc.returnValue))
                     {
+
+
+                        
+                        string directoryPath = Path.Combine(GlobalFilePath.docPath, uc.returnValue);
+
+                        // 既に存在するなら
+                        if (Directory.Exists(directoryPath)) 
+                        {
+                            MessageBox.Show("そのディレクトリはすでに存在しています", "エラー",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
                         listBox1.Items.Add(uc.returnValue);
 
-
-                        string docPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                        string directoryPath = Path.Combine(docPath, uc.returnValue);
 
                         //作品名のDirectoryを作成
                         Directory.CreateDirectory(directoryPath);
