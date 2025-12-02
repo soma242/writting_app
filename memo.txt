@@ -65,3 +65,104 @@ dialog系はdialogFormにucを引数として渡して扱う
 /*
  treeをPanelに変更。
 */
+
+////MemoryPack
+/*
+ 速度 > 圧縮率
+ 基本的に日本語のシリアライズを行うので必ずOptionでUTF-16に設定。
+    //MemoryPackSerializerOptions.Utf16
+ デシリアライズ先は基本的に使いまわすので上書きを利用する
+*/
+
+
+
+////Listの遅延初期化について
+/*
+
+ arrayPoolでもリストをキャッシュする => Desirializeによる上書きと使用メモリ自体は変わらない。最初の初期化タイミングについては考える必要あるが、それ以降については上書き処理で考える
+ static(instanceを保持するglobal)を分けて初期化のタイミングを分けるのはあり。その場合subscribeもされていないはずなので問題ない
+
+ MemoryPackのDesirializeによる上書きを使用するので純粋にLazy<List>だとListに対する参照が切れていてGCが起こるはず
+ 中間にラッパーを挟んで初期化処理を行う、Lazyの初期化でArrayPoolを介す、自前で遅延初期化を組むのいずれかで対応
+
+ Lazyで一度取った値を以降は上書き処理する方法も無理(Lazy.Valueはgetのみ可能)
+
+
+*/
+
+
+////複数種類のノード間のつながりを検索して表示できるようにする
+/*
+ ファイルを選択するNode
+ string, int 
+
+ Dictionary<int, List<int>>でエッジを検索する
+ 　lookup(多対応不変)など色々検討したが一旦これに決定
+ 　変更可能、1:n対応で高速の検索、serializeのパフォーマンスがいい方法見つけたらまた考える
+
+ ここで得られるintから更にstringを持ってくる必要があるので、Node自体もDictionary<int, string>
+ 　=>これだと全要素列挙が遅くなる。できればlistがいい。
+ 　=>Dictionaly<int(id), int(listのindex)>を挟んでlistの直接参照を行う？
+    =>インデックス変更時に必要な処理。インデックス自体を獲得、listに変更を加える。その変更をDictionaryに反映
+
+ 　=>追加するときに空いているKey(基本最後に追加したKey+1)を持っている必要がある。
+
+ =>自作クラスでDictionaryとintをラッピング
+ 　=>Dictionaryで上書き処理がされるか確認が必要
+   =>確認した限りでは上書きされている
+
+
+   deleteと並べ替えが重いが、そもそも重いし頻度が少ないはず
+
+*/
+
+
+//実態
+////idは不変、要素の削除も考える必要がある。
+List<class(int(id), string)>
+
+//idからstringを即座に取り出すための中継
+////複数取り出す可能性が高いのでidに対して線形探索したくない
+Dictionary<int(id), int(index)>
+
+////idから対応するn個の他種類のidを取り出す
+//Dictionary<int(id), List<int>(探すid)>
+
+______対称
+
+
+
+remove
+//indexを受け取って削除する。重い
+//idを要素から受け取る、List自身から削除、Edge1(Dictionary<int, List<int>>)からつながりを持つ相手をidで検索（spanとして受け取る）
+// => foreachで対象からのつながりEdge1'を削除(相手のidで検索してListからRemove)、終了後にEdge1から削除。自分の持つEdgeの数だけ繰り返す。
+// => =>indexを使ってRemoveAt、indexを用いてSpanに切り出してforeachとidでDictionary<int, int>の対応する要素のindexを-1していく。
+
+
+
+
+
+
+enumString
+/*
+        /*
+        //　get{} を用いてGlobal内のstringへの参照だけを返す形式
+        //size 1
+        int size = Unsafe.SizeOf<MainTextsString>();
+        //struct内でGlobal内のstringから参照を受け取る形式
+        //size 8
+        int testSize = Unsafe.SizeOf<TestString>();
+        var pub = GlobalMessagePipe.GetPublisher<string>();
+        pub.Publish("size:" + size + "\n");
+        pub.Publish("size:" + testSize + "\n");
+        */
+
+    =>インライン化されているはず
+*/
+
+
+
+TNode,TNodeEnum
+INodeData
+    =>扱っているのはあくまでもフォルダ名なので、もし追加データ等あればフォルダ内にファイル作成して管理してしまえばよい
+    =>NodeDataの中に用意するのは少量とはいえメモリを圧迫する

@@ -23,6 +23,10 @@ public interface IDrawPanel
 
     public int IResizeHeight();
 
+    public void IResizeWidth(int width);
+
+    public void IButtonClick(MouseEventArgs e);
+
     //fontのSubを行うのでInterface標準としてDisposeも用意してTreePaintのSubから呼び出す。
     //Dispose自体は必要ないので隠す
     public void IDisposeSubscribes();

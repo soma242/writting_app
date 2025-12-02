@@ -18,7 +18,6 @@
                 //内部のコンポーネントを破棄する。
                 components.Dispose();
 
-                disposable?.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -47,7 +46,7 @@
             // 
             listBox1.AllowDrop = true;
             listBox1.Dock = DockStyle.Fill;
-            listBox1.Font = new Font("Yu Gothic UI", 18F);
+            listBox1.Font = new Font("Yu Gothic UI", 14F);
             listBox1.FormattingEnabled = true;
             listBox1.Location = new Point(0, 0);
             listBox1.Margin = new Padding(4);

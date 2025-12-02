@@ -1,6 +1,8 @@
 ﻿using PublishStructure;
 using System;
 using System.Collections.Generic;
+using System.Net.Mime;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using writting_app.MessageInstance;
@@ -15,6 +17,10 @@ internal class TextScreen : SplitContainer
 
     public int screenIndex { get; private set; }
 
+    private List<IDisposable> disposables;
+
+    private Control? content;
+
     public TextScreen()
     {
         screenIndex = GlobalScreenIndex.GetScreenIndex();
@@ -27,14 +33,38 @@ internal class TextScreen : SplitContainer
 
         InitializeComboBox();
 
+        SubscribeScreenChange();
+    }
 
+    private void SubscribeScreenChange()
+    {
+        var mainTextSub = GlobalMessagePipe.GetSubscriber<int, ScreenMainTextMessage>();
+        var d = mainTextSub.Subscribe(screenIndex, get =>
+        {
+            Panel2.Controls.Remove(content);
+            content?.Dispose();
+            content = get.instance;
+            Panel2.Controls.Add(content);
+        });
+        disposables.Add(d);
+    }
+
+    private void DisposeSubscribes()
+    {
+        var span = CollectionsMarshal.AsSpan(disposables);
+        foreach (var disposable in span)
+        {
+            disposable?.Dispose();
+        }
+        disposables.Clear();
     }
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            //現在使用しているインデックスに追加
+            //現在使用しているインデックスを解放
             GlobalScreenIndex.RemoveScreen(screenIndex);
+            DisposeSubscribes();
         }
 
         base.Dispose(disposing);

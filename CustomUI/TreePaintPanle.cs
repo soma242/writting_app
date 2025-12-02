@@ -112,6 +112,7 @@ public class TreePaintPanel : Panel, IAlignable
     public void IResizeWidth(int width)
     {
         this.Width = width;
+        painter.IResizeWidth(width - 5);
     }
 
 
@@ -188,9 +189,9 @@ public class TreePaintPanel : Panel, IAlignable
         */
     }
 
-    private void PanelClick(Point panelPos)
+    private void PanelClick(MouseEventArgs e)
     {
-
+        painter.IButtonClick(e);
 
     }
 
@@ -213,7 +214,7 @@ public class TreePaintPanel : Panel, IAlignable
             this.Capture = false;
             if (CheckMouseClick(e.Location))
             {
-                PanelClick(e.Location);
+                PanelClick(e);
             }
         }
     }

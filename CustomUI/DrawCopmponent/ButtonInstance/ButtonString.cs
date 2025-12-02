@@ -8,4 +8,8 @@ public static class ButtonString
 {
     public static string mainTexts = "main Texts";
 
+
+
+    public static string miniCreateTexts = "C";
+
 }

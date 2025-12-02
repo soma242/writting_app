@@ -1,4 +1,5 @@
-﻿using PublishStructure;
+﻿using MemoryPack;
+using PublishStructure;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -38,8 +39,71 @@ public static class LogChecker
     */
 }
 
+/*
+//Genericとして使いまわしたいのでList<INodeData>になった。(List<TNode>として扱うとTNodeEnumから生成するタイミングでTNodeとしてうけとる必要がある)
+//Unionは250未満で扱うべき(git hub)、ノードの種類なので大きく増えないはず
+[MemoryPackable]
+[MemoryPackUnion(0, typeof(MainTextNode))]
+public partial interface INodeData
+{
+    public int id { get; }
+    public string text { get; }
+
+}
+*/
+[MemoryPackable]
+public partial class NodeData
+{
+    public int id { get; private set; }
+    public string text { get; set; }
+
+    public NodeData(int id, string text) { 
+        this.id = id;
+        this.text = text;
+    }
 
 
+}
+
+[MemoryPackable]
+public partial class IdIndexManager
+{
+    public int lastAddedId;
+    public Dictionary<int, int> idIndexPair;
+    public List<int> deletedId;
+
+    public IdIndexManager()
+    {
+        //最初に0を渡す
+        lastAddedId = -1;
+        idIndexPair = new Dictionary<int, int>();
+        deletedId = new List<int>();
+
+    }
+
+    public int GetNewId()
+    {
+        //以前に消されたIDを割り当てる場合はlastAddedIdは触らない
+        if(deletedId.Count > 0)
+        {
+            int temp = deletedId.Count - 1;
+            int id = deletedId[temp];
+            deletedId.RemoveAt(temp);
+            return id;
+        }
+        else
+        {
+            lastAddedId++;
+            return lastAddedId;
+        }
+    }
+    public void SetNewPair(int id, int index)
+    {
+        idIndexPair.Add(id, index);
+    }
+}
+
+/*
 //interface
 public interface IClickableNode
 {
@@ -98,3 +162,4 @@ public class CharacterNode : TreeNode, IClickableNode
         LogChecker.WriteLog("CharacterNode clicked");
     }
 }
+*/

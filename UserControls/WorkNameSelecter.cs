@@ -20,7 +20,7 @@ public partial class WorkNameSelecter : UserControl
 
     private int buttonHeight = 40;
     //Desiner.csのDisposeでDispose
-    private IDisposable disposable;
+    //private IDisposable disposable;
 
     //listBoxに変更があったか
     //dragdrop, createButton
@@ -65,6 +65,8 @@ public partial class WorkNameSelecter : UserControl
         listBox1.BeginUpdate();
         SetListBoxItems();
         listBox1.EndUpdate();
+        if(listBox1.Items.Count > 0) 
+            listBox1.SelectedIndex = 0;
     }
 
     private void WorkNameSelecter_Resize(object sender, EventArgs e)
@@ -78,7 +80,6 @@ public partial class WorkNameSelecter : UserControl
 
     }
     */
-
 
 
 
@@ -205,13 +206,11 @@ public partial class WorkNameSelecter : UserControl
                         //作品名のDirectoryを作成
                         Directory.CreateDirectory(directoryPath);
 
-                        //未完成
-                        //作品内のcasheを保存するファイルを作成。
-                       // GlobalFilePath.CreateNodeCache(uc.returnValue);
+
+                        //Directoryとbinファイルは先に用意。増やしたらそれ用の処理を走らせる。
+                        GlobalCreateFiles.CreateWorkFile(directoryPath);
 
 
-                        //初期のディレクトリを作成。
-                        //MainText, Character,
 
                         changed = true;
 
@@ -261,8 +260,8 @@ public partial class WorkNameSelecter : UserControl
                     MessageBox.Show($"ファイルの削除に失敗しました: {ex.Message}");
                 }
 
-                var pub = GlobalMessagePipe.GetPublisher<string>();
-                pub.Publish(temp);
+                //var pub = GlobalMessagePipe.GetPublisher<string>();
+                //pub.Publish(temp);
             }
             
             

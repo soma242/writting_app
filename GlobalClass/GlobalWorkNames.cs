@@ -1,15 +1,15 @@
-﻿using System;
+﻿using MemoryPack;
+using PublishStructure;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipelines;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
-using MessagePack;
-using PublishStructure;
 
 namespace writting_app;
 
@@ -59,7 +59,7 @@ public static class GlobalWorkNames
 //新規作成時もちゃんと操作する。
 public class WorkNameList
 {
-    public List<string> workNames { get; private set; }
+    public List<string> workNames;
 
     public string cashePath;
 
@@ -108,12 +108,10 @@ public class WorkNameList
         }
 
         //Read(Write)Streamは文字列の読み書きに最適化されているが、MessagePackはバイナリ形式なのでFileStreamを直接使う。
-        using (var fs = File.OpenRead(cashePath))
-        {
-            var list = MessagePackSerializer.Deserialize<List<string>>(fs);
-            if (list != null)
-                workNames.AddRange(list);
-        }
+
+        var bytes = File.ReadAllBytes(cashePath);
+        MemoryPackSerializer.Deserialize<List<string>>(bytes, ref workNames);
+
     }
 
 
@@ -127,7 +125,8 @@ public class WorkNameList
 
         using(var fs = File.OpenWrite(cashePath))
         {
-            MessagePackSerializer.Serialize(fs, workNames);
+            byte[] bytes = MemoryPackSerializer.Serialize(workNames, MemoryPackSerializerOptions.Utf16);
+            fs.Write(bytes, 0, bytes.Length);
         }
     }
 

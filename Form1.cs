@@ -1,17 +1,19 @@
-﻿using PublishStructure;
+﻿using MemoryPack;
+using PublishStructure;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO.Pipelines;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
-using writting_app.MessageInstance;
 using writting_app.CustomUI;
+using writting_app.MessageInstance;
 
 
 namespace writting_app;
@@ -21,12 +23,17 @@ public partial class Form1 : Form
     private readonly int expandWidth = 200;
     private readonly int mainMenuSplit = 36;
 
+    //setting
+    private AppSetting setting;
+
 
     int leftMenuWidth;
     int splitPanelHeight = 20;
 
     private bool expandMenu = true;
 
+    private TextScreen mainScreen;
+    private TextScreen subScreen;
 
     IDisposable disposable;
 
@@ -35,6 +42,11 @@ public partial class Form1 : Form
         InitializeComponent();
 
         SetMessageContainer();
+
+        //test
+        InitializeSettings();
+        //setting = new AppSetting();
+        //SaveSettings();
 
         leftMenuWidth = expandWidth;
 
@@ -49,36 +61,51 @@ public partial class Form1 : Form
 
         LogChecker.Init(this.textBox1);
 
-        //test
-        /*
-        var pub = GlobalMessagePipe.GetPublisher<string>();
-        pub.Publish(Path.Combine(GlobalFilePath.docPath, "aaaa"));
-        */
 
-        //mev.Test();
-
-        var uc = new SelectPanel();
-        uc.Dock = DockStyle.Fill; // 忘れずに
-
-        splitContainer3.Panel2.Controls.Add(uc);
-
-
-        //this.Resize += new System.EventHandler(this.Form1_Resize);
 
         CompSizeIni();
 
-        var ts = new TextScreen();
-        ts.Dock = DockStyle.Fill;
-        splitContainer2.Panel2.Controls.Add(ts);
+        mainScreen = new TextScreen();
+        subScreen = new TextScreen();
 
-        var flow = new AlignmentPanel(GlobalFilePath.alignmentIndex, ts.screenIndex, DrawKind.all);
-        flow.Dock = DockStyle.Fill;
-        flow.AutoScroll = true;
-        //flow.
-        ts.Panel2.Controls.Add(flow);
+        
+        mainScreen.Dock = DockStyle.Fill;
+        splitContainer3.Panel2.Controls.Add(mainScreen);
+
+        
+
 
         //flow.Dispose();
 
+        //work選択用の画面を開く
+
+        if (setting.openWithLastWork)
+        {
+            GlobalFilePath.SetWorkName(setting.lastWorkName);
+        }
+        else
+        {
+            SetWorkName();
+
+        }
+
+        //workNameが空のままだと開けなくなる
+        var flow = new AlignmentPanel(GlobalFilePath.alignmentIndex, mainScreen.screenIndex, DrawKind.all);
+        flow.Dock = DockStyle.Fill;
+        flow.AutoScroll = true;
+        //flow.
+        mainScreen.Panel2.Controls.Add(flow);
+
+        /*
+        int size = Unsafe.SizeOf<>();
+        int testSize = Unsafe.SizeOf<TestString>();
+        var pub = GlobalMessagePipe.GetPublisher<string>();
+        pub.Publish("size:" + size + "\n");
+        pub.Publish("size:" + testSize + "\n");
+        */
+
+        //LogChecker.WriteLog(GlobalFilePath.workName);
+        //GlobalFilePath.SetWorkName("");
     }
 
     ~Form1()
@@ -99,7 +126,13 @@ public partial class Form1 : Form
 
         builder.AddMessageBroker<int, string>();
 
+        builder.AddMessageBroker<WorkChangedMessage>();
+
+        builder.AddMessageBroker<AligneListChanged>();
+
+
         builder.AddMessageBroker<int, ChangeScreenFont>();
+        builder.AddMessageBroker<int, ScreenMainTextMessage>();
 
         builder.AddMessageBroker<int, AlignmentWidth>();
         builder.AddMessageBroker<int, ExpandMainTexts>();
@@ -126,7 +159,12 @@ public partial class Form1 : Form
 
     private void OnAppExit(object? sender, EventArgs e)
     {
+        //setting.openWithLastWork = true;
         GlobalWorkNames.SaveInstance();
+        SaveSettings();
+        //開かれている作品のcasheをセーブ。作品切り替え時と同一
+        var pub = GlobalMessagePipe.GetPublisher<WorkChangedMessage>();
+        pub.Publish(new WorkChangedMessage());
     }
 
 
@@ -200,40 +238,98 @@ public partial class Form1 : Form
 
 
 
-
     private void SetWorkName()
     {
+        //余裕出来たら考え直す
         using (var uc = new WorkNameSelecter())
         {
-            using (var form = new DialogForm(uc))
+            //workNameが空の場合呼ばれ続ける
+            //uc自体はusing抜けるまでDisposeせずに使いまわす
+            do
             {
-                //ShowDialogを待ってからreflectionしないといけない
-                //Dialogの結果にかかわらずreflectionする
-                var result = form.ShowDialog();
-                uc.ReflectListBoxItems();
-
-
-                if (result == DialogResult.OK)
+                using (var form = new DialogForm(uc))
                 {
-                    int index = uc.returnValue;
-                    if (index == -1)
-                        return;
+                    //ShowDialogを待ってからreflectionしないといけない
+                    //Dialogの結果にかかわらずreflectionする
+                    var result = form.ShowDialog();
+                    uc.ReflectListBoxItems();
 
-                    string value = GlobalWorkNames.ReturnValue(index);
 
-
-                    //list内のデータを読み込む前にデータの反映が保証されている必要がある。
-
-                    if (!string.IsNullOrWhiteSpace(value))
+                    if (result == DialogResult.OK)
                     {
-                        GlobalFilePath.SetWorkName(value);
+                        int index = uc.returnValue;
+                        //次のWhileへ
+                        if (index == -1)
+                            continue;
+
+                        string value = GlobalWorkNames.ReturnValue(index);
+
+
+                        //list内のデータを読み込む前にデータの反映が保証されている必要がある。
+
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            GlobalFilePath.SetWorkName(value);
+                        }
+
+
                     }
-
-
                 }
-            }
+            } while (string.IsNullOrWhiteSpace(GlobalFilePath.workName));
+           
         }
     }
 
+    private void InitializeSettings()
+    {
+        string tempPath = Path.Combine(GlobalFilePath.docPath, "settings.bin");
+        if (!File.Exists(tempPath))
+        {
+            //ファイルがなければ作成する。
+            using (var fs = File.Create(tempPath))
+            {
+                //空のファイルを作成
 
+            }
+
+        }else if (new FileInfo(tempPath).Length < 1)
+        {
+            var pub = GlobalMessagePipe.GetPublisher<string>();
+            pub.Publish("Error, ファイル内にデータが存在しない");
+            return;
+        }
+        
+        byte[] bytes = File.ReadAllBytes(tempPath);
+        setting = MemoryPackSerializer.Deserialize<AppSetting>(bytes);
+    }
+
+    private void SaveSettings()
+    {
+        setting.lastWorkName = GlobalFilePath.workName;
+
+        string tempPath = Path.Combine(GlobalFilePath.docPath, "settings.bin");
+        using(var fs = File.OpenWrite(tempPath))
+        {
+            byte[] bytes = MemoryPackSerializer.Serialize<AppSetting>(setting);
+            fs.Write(bytes, 0, bytes.Length);
+        }
+
+
+
+    }
 }
+
+
+
+//追加は可能、削除は別class作ってデータを掬った後このクラスに整えてSerialize
+[MemoryPackable]
+public partial class AppSetting 
+{
+    //最後に開かれたWorkで開くようにする
+    [SuppressDefaultInitialization]
+    public bool openWithLastWork = true;
+    public string lastWorkName = "";
+
+    //public 
+}
+

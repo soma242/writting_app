@@ -69,6 +69,7 @@ public class UserPaintButton: Control, IAlignable
     protected override void OnPaint(PaintEventArgs e)
     { 
         //string text = "test";
+        base.OnPaint(e);
 
         instance.IDrawButton(e.Graphics);
 

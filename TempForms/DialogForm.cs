@@ -26,7 +26,7 @@ public partial class DialogForm : Form
         InitializeComponent();
         CommonInit(uc as UserControl);
 
-        this.Text = "作品名";
+        this.Text = "作品名を選択してください";
         this.AcceptButton = this.okButton;
 
         //FormClosing += WorkMessageClosing;
@@ -63,12 +63,15 @@ public partial class DialogForm : Form
 
     public void okButton_Click(object sender, EventArgs e)
     {
-        //returnValue = 
+        //呼び出しもとでDisposeを行う
+        this.splitContainer1.Panel1.Controls.Clear();
         this.DialogResult = DialogResult.OK;
         this.Close();
     }
     public void cancelButton_Click(object sender, EventArgs e)
     {
+        //呼び出しもとでDisposeを行う
+        this.splitContainer1.Panel1.Controls.Clear();
         this.DialogResult = DialogResult.Cancel;
         this.Close();
     }

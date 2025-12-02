@@ -17,3 +17,5 @@ public struct AlignmentWidth
 public struct ExpandMainTexts { }
 
 public struct AlignCall {}
+
+public struct AligneListChanged { } 

@@ -7,7 +7,6 @@ namespace writting_app.CustomUI;
 public class AlignmentPanel: Panel
 {
 
-    private readonly int indent = 20;
 
     //GlobalFilePathのFastQueueから空いているインデックスをもらい、MessagePipeのKeyに用いる。
     //disposeもここから行う
@@ -30,6 +29,7 @@ public class AlignmentPanel: Panel
 
     private IDisposable disposableChangeFont;
     private IDisposable disposableAligneCall;
+    private IDisposable disposableListChanged;
 
     public AlignmentPanel(int indexKey, int screenIndex, DrawKind kind)
     {
@@ -42,7 +42,7 @@ public class AlignmentPanel: Panel
         this.screenIndex = screenIndex;
         //alignmentIndex = GlobalFilePath.alignmentIndex
 
-        this.alignmentData = new AlignmentData(new System.Drawing.Font(GlobalFontSetting.fontName, 15f));
+        this.alignmentData = new AlignmentData(new System.Drawing.Font(GlobalFontSetting.fontName, 15f), screenIndex);
 
 
         //widthPub = GlobalMessagePipe.GetPublisher<int, AlignmentWidth>();
@@ -54,6 +54,11 @@ public class AlignmentPanel: Panel
         });
         var callSub = GlobalMessagePipe.GetSubscriber<int, AlignCall>();
         disposableAligneCall = callSub.Subscribe(alignmentIndex, get =>
+        {
+            AligneAlignables();
+        });
+        var listChangedSub = GlobalMessagePipe.GetSubscriber<AligneListChanged>();
+        disposableListChanged = listChangedSub.Subscribe(get =>
         {
             AligneAlignables();
         });
@@ -96,7 +101,7 @@ public class AlignmentPanel: Panel
 
     private void SetAllAlignment()
     {
-        alignables = new IAlignable[3];
+        alignables = new IAlignable[2];
 
         var mainTextButton = new UserPaintButton(alignmentIndex, ControlButtonKind.maintext, alignmentData);
         //mainTextButton.Location = new Point(0, 0);
@@ -115,9 +120,11 @@ public class AlignmentPanel: Panel
         this.Controls.Add(panel);
 
         //test
+        /*
         var button2 = new UserPaintButton(alignmentIndex, ControlButtonKind.maintext, alignmentData);
         this.Controls.Add(button2);
         alignables[2] = button2;
+        */
 
         AligneAlignables();
     }
@@ -126,12 +133,13 @@ public class AlignmentPanel: Panel
     {
         disposableChangeFont?.Dispose();
         disposableAligneCall?.Dispose();
+        disposableListChanged?.Dispose();
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing) {
-            //現在使用しているインデックスに追加
+            //現在使用しているインデックスを解放
             GlobalFilePath.RemoveAlignment(alignmentIndex);
             DisposeSubscribes();
         }
@@ -159,6 +167,8 @@ public class AlignmentPanel: Panel
         }
 
         pastWidth = Width;
+        //無いと前の描画が残る
+        this.Refresh();
         //widthPub.Publish(alignmentIndex, new AlignmentWidth(this.Width - 20));
     }
 
@@ -198,16 +208,21 @@ public class AlignmentPanel: Panel
 
 public class AlignmentData
 {
-    public AlignmentData(Font font)
+    public AlignmentData(Font font, int screenIndex)
     {
         this.font = font; 
         fontHeight = font.Height;
-
+        indent = 20;
+        this.screenIndex = screenIndex;
     }
 
     public System.Drawing.Font font { get; private set; }
 
     public int fontHeight { get; private set; }
+
+    public readonly int indent;
+
+    public readonly int screenIndex;
 
 
     public void FontSizeChange(float fontSize)

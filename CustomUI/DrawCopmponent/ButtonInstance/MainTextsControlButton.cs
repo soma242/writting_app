@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Channels;
 using System.Windows.Forms;
 using writting_app.MessageInstance;
 using static System.Net.Mime.MediaTypeNames;
@@ -10,12 +11,13 @@ namespace writting_app.CustomUI;
 
 public class MainTextsControlButton : IButtonInstance
 {
-    private readonly int rationString = 8;
+    private readonly int ratioString = 8;
 
     private int indexKey;
     private AlignmentData alignData;
 
     private Size buttonSize;
+    private int miniButtonX;
 
     //文字数制限
     private int limitString;
@@ -45,8 +47,13 @@ public class MainTextsControlButton : IButtonInstance
         //pub.Publish("" + buttonSize.Height);
         
         //g.DrawLine(Pens.Gray, 0, 0, 400, 0);
+
         g.DrawRectangle(Pens.Black, new Rectangle(new Point(0,0), buttonSize));
         
+        //button
+        g.DrawRectangle(Pens.Black, new Rectangle(new Point(miniButtonX, 0), new Size( alignData.fontHeight, alignData.fontHeight)));
+        TextRenderer.DrawText(g,  ButtonString.miniCreateTexts, alignData.font, new Point(miniButtonX, 0), Color.Black);
+
         if (limitString < ButtonString.mainTexts.Length)
         {
             ReadOnlySpan<char> span = ButtonString.mainTexts.AsSpan(0, limitString);
@@ -62,8 +69,31 @@ public class MainTextsControlButton : IButtonInstance
 
     public void IButtonClick(Point point) 
     {
-        var pub = GlobalMessagePipe.GetPublisher<int, ExpandMainTexts>();
-        pub.Publish(indexKey, new ExpandMainTexts());
+        if(point.X < miniButtonX)
+        {
+            var pub = GlobalMessagePipe.GetPublisher<int, ExpandMainTexts>();
+            pub.Publish(indexKey, new ExpandMainTexts());
+        }
+        else
+        {
+            using (var uc = new InputString())
+            {
+                using (var form = new DialogForm(uc))
+                {
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+
+                        if (!string.IsNullOrWhiteSpace(uc.returnValue))
+                        {
+                            
+
+                            GlobalMainTextsCashes.AddNode(uc.returnValue);
+                        }
+
+                    }
+                }
+            }
+        }
 
         //var pubSt = GlobalMessagePipe.GetPublisher<string>();
         //pubSt.Publish("click");
@@ -85,8 +115,12 @@ public class MainTextsControlButton : IButtonInstance
 
     private void CalculateLimitString()
     {
-        //(AlignmentPanel.Width-20) * 0.8(8/10) / (alignData.fontHeight/2) +1(切り上げ)
-        limitString = (buttonSize.Width * rationString) / (alignData.fontHeight * 5) +1;
+        // / (ボタン全体のサイズ * メインの比率)/ (fontHeight/2 *10) + 1(切り上げ)
+        limitString = (buttonSize.Width * ratioString) / (alignData.fontHeight * 5) + 1;
+
+        //(ボタン全体のサイズ) * (1-メインの比率)  (10-8)/10
+        //stringWidth = buttonSize.Width * (10 - ratioString) / 10;
+        miniButtonX = buttonSize.Width - alignData.fontHeight;
     }
 }
 
